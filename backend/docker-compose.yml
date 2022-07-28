@@ -1,0 +1,8 @@
+version: "3"
+services:
+  redis:
+    image: redis
+    restart: always
+    container_name: moralis-auth-cache
+    ports:
+      - '${REDIS_PORT:-6380}:6380'
