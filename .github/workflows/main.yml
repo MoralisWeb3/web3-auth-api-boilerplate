@@ -20,6 +20,8 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node }}
+      - run: npm ci
+        working-directory: dashboard
       - name: Unit Test
         working-directory: backend
         run: npm run test
