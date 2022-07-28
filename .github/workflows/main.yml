@@ -25,7 +25,7 @@ jobs:
         working-directory: backend
       - name: Unit Test
         working-directory: backend
-        run: npm run test --detectOpenHandles
+        run: npm run test
       - name: E2E Test
         working-directory: backend
         run: npm run test:e2e

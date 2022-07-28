@@ -1,30 +1,28 @@
 import { AuthService } from './auth.service';
 import { Wallet } from 'ethers';
-import { apiPort, jwtSecret, moralisAuthApiUrl, redisUrl } from '../../config/env';
-import { JwtService } from '@nestjs/jwt';
+import { apiPort, jwtSecret, moralisAuthApiUrl } from '../../config/env';
 import { verify, JwtPayload } from 'jsonwebtoken';
 import { UserService } from '../user/user.service';
-import { Cache } from 'cache-manager';
-import { create } from 'cache-manager-redis-store';
 import { ChallengeResponseDto } from './dto/challengeResponse.dto';
 import { ProtectedUserDto } from '../user/dto/protectedUser.dto';
 import { UserDto } from '../user/dto/user.dto';
 import { CompleteChallengeResponseDto } from './dto/completeChallengeResponse.dto';
+import { Test, TestingModule } from '@nestjs/testing';
+import { appConfig } from '../../config/app';
 
 describe('auth service', () => {
-  const cache = create({ url: redisUrl }) as unknown as Cache;
+  let module: TestingModule;
   let wallet: Wallet;
   let userService: UserService;
-  let jwtService: JwtService;
   let authService: AuthService;
   let web2User: UserDto;
 
-  beforeEach(() => {
-    userService = new UserService();
-    jwtService = new JwtService({
-      secret: jwtSecret,
-    });
-    authService = new AuthService(cache, jwtService, userService);
+  beforeAll(async () => {
+    module = await Test.createTestingModule(appConfig).compile();
+
+    userService = module.get<UserService>(UserService);
+    authService = module.get<AuthService>(AuthService);
+
     wallet = Wallet.createRandom();
 
     web2User = {
@@ -34,6 +32,10 @@ describe('auth service', () => {
       address: '',
     };
     userService.createUser(web2User);
+  });
+
+  it('should be defined', () => {
+    expect(userService).toBeDefined();
   });
 
   it('can sign up with local', () => {
@@ -151,5 +153,9 @@ describe('auth service', () => {
 
     expect(jwtPayload['username']).toEqual(protectedUser.username);
     expect(jwtPayload['address']).toEqual(protectedUser.address);
+  });
+
+  afterAll(async () => {
+    await module.close();
   });
 });

@@ -1,12 +1,12 @@
-import { CacheModule, Module } from '@nestjs/common';
-import { AuthModule } from './modules/auth/auth.module';
-import { NftModule } from './modules/nft/nft.module';
-import { UserModule } from './modules/user/user.module';
+import { CacheModule } from '@nestjs/common';
 import type { ClientOpts } from 'redis';
 import * as redisStore from 'cache-manager-redis-store';
-import { redisUrl } from './config/env';
+import { redisUrl } from '../config/env';
+import { AuthModule } from '../modules/auth/auth.module';
+import { NftModule } from '../modules/nft/nft.module';
+import { UserModule } from '../modules/user/user.module';
 
-@Module({
+export const appConfig = {
   imports: [
     CacheModule.register<ClientOpts>({
       store: redisStore,
@@ -19,5 +19,4 @@ import { redisUrl } from './config/env';
   ],
   controllers: [],
   providers: [],
-})
-export class AppModule {}
+};

@@ -1,16 +1,22 @@
+import { Test, TestingModule } from '@nestjs/testing';
 import { createHash } from 'crypto';
 import { Wallet } from 'ethers';
+import { appConfig } from '../../config/app';
 import { UserDto } from './dto/user.dto';
 import { UserService } from './user.service';
 
 describe('user service', () => {
+  let module: TestingModule;
   let wallet: Wallet;
   let userService: UserService;
   let webUser: UserDto;
 
-  beforeEach(() => {
+  beforeAll(async () => {
+    module = await Test.createTestingModule(appConfig).compile();
+
+    userService = module.get<UserService>(UserService);
+
     wallet = Wallet.createRandom();
-    userService = new UserService();
     webUser = {
       profileId: '',
       username: 'aaa@moralis.io',
@@ -160,5 +166,9 @@ describe('user service', () => {
     );
 
     expect(protectedWebUser).toBeNull();
+  });
+
+  afterAll(async () => {
+    await module.close();
   });
 });
