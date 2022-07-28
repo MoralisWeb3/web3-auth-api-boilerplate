@@ -4,16 +4,21 @@ import * as request from 'supertest';
 import { appConfig } from '../src/config/app';
 
 describe('AppController (e2e)', () => {
+  let module: TestingModule;
   let app: INestApplication;
 
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule(appConfig).compile();
+  beforeAll(async () => {
+    module = await Test.createTestingModule(appConfig).compile();
 
-    app = moduleFixture.createNestApplication();
+    app = module.createNestApplication();
     await app.init();
   });
 
   it('/ (GET)', () => {
     return request(app.getHttpServer()).get('/').expect(404);
+  });
+
+  afterAll(async () => {
+    await module.close();
   });
 });
