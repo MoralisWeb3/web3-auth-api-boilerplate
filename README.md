@@ -23,18 +23,20 @@ Auth Demo Application contains of 2 layers of application:
 # Setup guide
 
 ## :framed_picture: Frontend Application
-1) Rename `.env.example` to `.env`.
-2) In `.env`, configure `REACT_APP_MORALIS_APP_ID` and `REACT_APP_MORALIS_SERVER_URL` (Create Dapp and Obtain key [here](https://admin.moralis.io/dapps)).
-3) Run `npm install`.
-4) Run `npm run start`.
+1) Run `cd frontend` to enter the frontend folder
+2) Rename `.env.example` to `.env`.
+3) In `.env`, configure `REACT_APP_MORALIS_APP_ID` and `REACT_APP_MORALIS_SERVER_URL` (Create Dapp and Obtain key [here](https://admin.moralis.io/dapps)).
+4) Run `npm install`.
+5) Run `npm run start`.
 
 ## :gear: Backend Application
-1) Rename `.env.example` to `.env`.
-2) Make sure your local docker environment is up and running ([Download Docker](https://docs.docker.com/get-docker/)).
-3) Run `npm run dev:up` to spin up docker images.
-4) In `.env`, configure `MORALIS_WEB3_API_KEY` (Obtain the key [here](https://admin.moralis.io/web3apis))
-4) Run `npm install`.
-5) Run `npm run start:dev`.
+1) Run `cd frontend` to enter the frontend folder
+2) Rename `.env.example` to `.env`.
+3) Make sure your local docker environment is up and running ([Download Docker](https://docs.docker.com/get-docker/)).
+4) Run `npm run dev:up` to spin up docker images.
+5) In `.env`, configure `MORALIS_WEB3_API_KEY` (Obtain the key [here](https://admin.moralis.io/web3apis))
+6) Run `npm install`.
+7) Run `npm run start:dev`.
 
 # References
 [Moralis Auth API Endpoints](https://authapi.moralis.io/api-docs)
