@@ -30,7 +30,7 @@ Auth Demo Application contains of 2 layers of application:
 5) Run `npm run start`.
 
 ## :gear: Backend Application
-1) Run `cd frontend` to enter the frontend folder
+1) Run `cd backend` to enter the backend folder
 2) Rename `.env.example` to `.env`.
 3) Make sure your local docker environment is up and running ([Download Docker](https://docs.docker.com/get-docker/)).
 4) Run `npm run dev:up` to spin up docker images.
