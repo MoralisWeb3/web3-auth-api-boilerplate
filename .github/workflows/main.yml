@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - run: npm ci
-        working-directory: dashboard
+        working-directory: backend
       - name: Unit Test
         working-directory: backend
         run: npm run test
