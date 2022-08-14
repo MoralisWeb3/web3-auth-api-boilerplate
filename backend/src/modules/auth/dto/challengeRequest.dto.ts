@@ -17,7 +17,7 @@ export class ChallengeRequestDto {
     type: 'string',
     required: true,
     description: 'RFC 4501 dns authority that is requesting the signing.',
-    example: 'rugpull.finance',
+    example: 'defi.finance',
     format: 'hostname',
   })
   @IsUrl({ require_protocol: false, require_tld: false })
@@ -48,7 +48,7 @@ export class ChallengeRequestDto {
     type: String,
     required: true,
     format: 'uri',
-    example: 'https://rugpull.finance/',
+    example: 'https://defi.finance/',
     description:
       'RFC 3986 URI referring to the resource that is the subject of the signing (as in the __subject__ of a claim).',
   })
