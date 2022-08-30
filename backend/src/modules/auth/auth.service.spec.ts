@@ -114,7 +114,7 @@ describe('auth service', () => {
       profileId: '',
       message: 'this is a signing message',
     };
-    const signingData = authService.prepareSigningData(
+    const signingData = authService.prepareSignData(
       challengeResponse,
       EBlockchainType.EVM,
     );
