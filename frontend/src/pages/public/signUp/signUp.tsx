@@ -1,5 +1,6 @@
 import { Divider, Grid } from '@mui/material';
 import axios from 'axios';
+import { base58 } from 'ethers/lib/utils';
 import { FC, useEffect, useState } from 'react';
 import { useMoralis } from 'react-moralis';
 import { useNavigate } from 'react-router-dom';
@@ -48,7 +49,7 @@ const SignUp: FC = () => {
     const signUpMetamask = async () => {
         if (web3 && chainId) {
             try {
-                const { data: challengeInfo } = await axios.post(process.env.REACT_APP_THIRD_PARTY_API_URL + '/auth/signUpWithEthereum', {
+                const { data: challengeInfo } = await axios.post(process.env.REACT_APP_THIRD_PARTY_API_URL + '/auth/signUp/evm', {
                     address: await web3.getSigner().getAddress(),
                     chainId: parseInt(chainId, 16),
                 });
@@ -89,6 +90,53 @@ const SignUp: FC = () => {
         }
     }
 
+    const signUpSolana = async () => {
+        const solana = await (window as any).solana;
+        if (solana) {
+            try {
+                await solana.connect();
+                const { data: challengeInfo } = await axios.post(process.env.REACT_APP_THIRD_PARTY_API_URL + '/auth/signUp/solana', {
+                    address: solana.publicKey.toBase58(),
+                    network: 'mainnet',
+                });
+
+                if (challengeInfo.message && challengeInfo.signUrl) {
+                    const encodedMessage = new TextEncoder().encode(challengeInfo.message);
+                    const { signature } = await solana.signMessage(encodedMessage, 'utf8');
+                    const { data: completeChallengeInfo } = await axios.post(challengeInfo.signUrl, {
+                        message: challengeInfo.message,
+                        signature: base58.encode(signature),
+                    });
+
+                    if (completeChallengeInfo.token) {
+                        notification({
+                            type: 'success',
+                            position: 'topR',
+                            title: 'Congratulations!',
+                            message: `You are logged in!`
+                        });
+                        setToken(completeChallengeInfo.token);
+                    }
+                }
+            } catch (error: any) {
+                const errorMessage = handleError(error, resetToken);
+                notification({
+                    type: 'error',
+                    position: 'topR',
+                    title: 'Oops!',
+                    message: errorMessage.message ?? JSON.stringify(errorMessage),
+                });
+            }
+        } else {
+            notification({
+                type: 'error',
+                position: 'topR',
+                title: 'Oops!',
+                message: 'Unable to find Solana Provider'
+            });
+        }
+    }
+
     useEffect(() => {
         if (!web3) {
             enableWeb3();
@@ -97,6 +145,7 @@ const SignUp: FC = () => {
 
     const signUpOptions = [
         { icon: 'metamask', text: 'Sign Up with Metamask', callback: signUpMetamask },
+        { icon: 'solana', text: 'Sign Up with Solana', callback: signUpSolana },
     ]
 
     return (

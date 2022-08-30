@@ -1,10 +1,10 @@
 import { CacheModule } from '@nestjs/common';
-import type { ClientOpts } from 'redis';
-import * as redisStore from 'cache-manager-redis-store';
-import { redisUrl } from '../config/env';
 import { AuthModule } from '../modules/auth/auth.module';
 import { NftModule } from '../modules/nft/nft.module';
 import { UserModule } from '../modules/user/user.module';
+import type { ClientOpts } from 'redis';
+import * as redisStore from 'cache-manager-redis-store';
+import { redisUrl } from './env';
 
 export const appConfig = {
   imports: [

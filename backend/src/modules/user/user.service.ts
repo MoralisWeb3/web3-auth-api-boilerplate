@@ -72,7 +72,7 @@ export class UserService {
     username: string,
   ): ProtectedUserDto {
     if (!username) throw new NotFoundException();
-    delete protectedUser.username;
+    const { username: excludedUsername, ...excludedUser } = protectedUser;
 
     const userIndex = this.users.findIndex((user) => {
       return username === user.username;
@@ -82,7 +82,7 @@ export class UserService {
 
     this.users[userIndex] = {
       ...this.users[userIndex],
-      ...protectedUser,
+      ...excludedUser,
     };
 
     return new ProtectedUserDto(this.users[userIndex]);

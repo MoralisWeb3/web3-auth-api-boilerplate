@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CompleteWithEthereumResponseDto {
+export class TokenResponseDto {
   @ApiProperty({
     type: String,
     required: true,

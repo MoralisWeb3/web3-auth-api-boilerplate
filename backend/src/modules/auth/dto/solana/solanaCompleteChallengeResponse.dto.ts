@@ -1,18 +1,29 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsAscii,
-  IsEthereumAddress,
-  IsNumber,
-  IsPositive,
   IsUrl,
   IsOptional,
-  IsISO8601,
-  Min,
-  Max,
   IsArray,
+  IsNotEmpty,
+  IsAscii,
+  IsISO8601,
+  Length,
+  IsEnum,
 } from 'class-validator';
+import { ESolanaNetwork } from '../../types/ESolanaNetwork';
 
-export class ChallengeRequestDto {
+export class SolanaCompleteChallengeResponseDto {
+  @ApiProperty({
+    type: String,
+    required: true,
+    maxLength: 64,
+    minLength: 8,
+    description:
+      '17-characters Alphanumeric string Secret Challenge ID used to identify this particular request. Is should be used at the backend of the calling service to identify the completed request.',
+    example: 'fRyt67D3eRss3RrX',
+    pattern: '^[a-zA-Z0-9]{8,64}$',
+  })
+  id: string;
+
   @ApiProperty({
     type: 'string',
     required: true,
@@ -20,17 +31,29 @@ export class ChallengeRequestDto {
     example: 'defi.finance',
     format: 'hostname',
   })
-  @IsUrl({ require_protocol: false, require_tld: false })
+  @IsUrl({ require_protocol: false })
   domain: string;
 
   @ApiProperty({
     type: String,
+    enum: ESolanaNetwork,
     required: true,
-    example: '0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B',
-    description:
-      'Ethereum address performing the signing conformant to capitalization encoded checksum specified in EIP-55 where applicable.',
+    example: ESolanaNetwork.MAINNET,
+    description: 'The network where Contract Accounts must be resolved.',
   })
-  @IsEthereumAddress()
+  @IsEnum(ESolanaNetwork)
+  @IsNotEmpty()
+  network: ESolanaNetwork;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    example: '26qv4GCcx98RihuK3c4T6ozB3J7L6VwCuFVc7Ta2A3Uo',
+    description:
+      'Solana public key with a length of 44 characters that is used to perform the signing',
+  })
+  @Length(44)
+  @IsNotEmpty()
   address: string;
 
   @ApiProperty({
@@ -54,18 +77,6 @@ export class ChallengeRequestDto {
   })
   @IsUrl({ require_protocol: true, require_tld: false })
   uri: string;
-
-  @ApiProperty({
-    type: Number,
-    minimum: 0,
-    required: true,
-    example: 1,
-    description:
-      'EIP-155 Chain ID to which the session is bound, and the network where Contract Accounts must be resolved.',
-  })
-  @IsPositive()
-  @Min(1)
-  chainId: number;
 
   @ApiProperty({
     type: String,
@@ -103,17 +114,28 @@ export class ChallengeRequestDto {
   resources?: Array<string>;
 
   @ApiProperty({
-    type: Number,
+    type: String,
     required: true,
-    minimum: 15,
-    default: 15,
-    maximum: 120,
-    example: 15,
-    description: 'Time in seconds before the challenge is expired',
+    example: '1.0',
+    description:
+      'EIP-155 Chain ID to which the session is bound, and the network where Contract Accounts must be resolved.',
   })
-  @IsPositive()
-  @IsNumber({ allowNaN: false, allowInfinity: false, maxDecimalPlaces: 0 })
-  @Min(15)
-  @Max(120)
-  timeout: number;
+  version: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    example: '0x1234567890abcdef0123456789abcdef1234567890abcdef',
+  })
+  @IsNotEmpty()
+  nonce: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: 'Unique identifier with a length of 66 characters',
+    example:
+      '0xbfbcfab169c67072ff418133124480fea02175f1402aaa497daa4fd09026b0e1',
+  })
+  profileId: string;
 }

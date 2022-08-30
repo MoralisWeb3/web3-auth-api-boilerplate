@@ -7,8 +7,7 @@ import { UserService } from './user.service';
 
 describe('user service', () => {
   let module: TestingModule;
-  let wallet1: Wallet;
-  let wallet2: Wallet;
+  let wallet: Wallet;
   let userService: UserService;
   let webUser: UserDto;
 
@@ -17,8 +16,7 @@ describe('user service', () => {
 
     userService = module.get<UserService>(UserService);
 
-    wallet1 = Wallet.createRandom();
-    wallet2 = Wallet.createRandom();
+    wallet = Wallet.createRandom();
     webUser = {
       profileId: '',
       username: 'aaa@moralis.io',
@@ -77,7 +75,7 @@ describe('user service', () => {
           profileId: '',
           username: '',
           password: '',
-          address: wallet1.address,
+          address: wallet.address,
         };
 
         userService.createUser(user);
@@ -163,7 +161,9 @@ describe('user service', () => {
   });
 
   it('find user by web3 identity: should not return any identity', () => {
-    const protectedWebUser = userService.findUserByWeb3Auth(wallet2.address);
+    const protectedWebUser = userService.findUserByWeb3Auth(
+      Wallet.createRandom().address,
+    );
 
     expect(protectedWebUser).toBeNull();
   });

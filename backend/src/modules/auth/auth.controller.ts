@@ -1,13 +1,18 @@
 import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { CompleteWithEthereumRequestDto } from './dto/completeWithEthereumRequest.dto';
-import { CompleteWithEthereumResponseDto } from './dto/completeWithEthereumResponse.dto';
-import { AuthLocalRequestDto } from './dto/authLocalRequest.dto';
-import { AuthLocalResponseDto } from './dto/authLocalResponse.dto';
-import { AuthWithEthereumRequestDto } from './dto/authWithEthereumRequest.dto';
-import { AuthWithEthereumResponseDto } from './dto/authWithEthereumResponse.dto';
+import { CompleteWithEvmResponseDto } from './dto/completeWithEvmResponse.dto';
+import { AuthWithLocalRequestDto } from './dto/authWithLocalRequest.dto';
+import { AuthWithLocalResponseDto } from './dto/authWithLocalResponse.dto';
+import { AuthWithEvmRequestDto } from './dto/authWithEvmRequest.dto';
+import { AuthWithEvmResponseDto } from './dto/authWithEvmResponse.dto';
 import { JwtAuthGuard } from '../../guards/jwtAuth.guard';
+import { AuthWithSolanaResponseDto } from './dto/authWithSolanaResponse.dto';
+import { AuthWithSolanaRequestDto } from './dto/authWithSolanaRequest.dto';
+import { EBlockchainType } from '../../config/types';
+import { CompleteWithSolanaResponseDto } from './dto/completeWithSolanaResponse.dto';
+import { EvmCompleteChallengeRequestDto } from './dto/evm/evmCompleteChallengeRequest.dto';
+import { SolanaCompleteChallengeRequestDto } from './dto/solana/solanaCompleteChallengeRequest.dto';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -16,84 +21,159 @@ export class AuthController {
 
   @Post('/signUp')
   @ApiCreatedResponse({
-    type: AuthLocalResponseDto,
+    type: AuthWithLocalResponseDto,
     description: 'Authentication token for user to access data.',
   })
   @ApiOperation({ operationId: 'signUp' })
-  async signUp(
-    @Body() authLocalRequest: AuthLocalRequestDto,
-  ): Promise<AuthLocalResponseDto> {
+  signUp(
+    @Body() authLocalRequest: AuthWithLocalRequestDto,
+  ): AuthWithLocalResponseDto {
     return this.authService.signUp(authLocalRequest);
   }
 
   @Post('/signIn')
   @ApiCreatedResponse({
-    type: AuthLocalResponseDto,
+    type: AuthWithLocalResponseDto,
     description: 'Authentication token for user to access data.',
   })
   @ApiOperation({ operationId: 'signIn' })
-  async signIn(
-    @Body() authLocalRequest: AuthLocalRequestDto,
-  ): Promise<AuthLocalResponseDto> {
+  signIn(
+    @Body() authLocalRequest: AuthWithLocalRequestDto,
+  ): AuthWithLocalResponseDto {
     return this.authService.signIn(authLocalRequest);
   }
 
-  @Post('/signInWithEthereum')
+  @Post('/signIn/evm')
   @ApiCreatedResponse({
-    type: AuthWithEthereumResponseDto,
+    type: AuthWithEvmResponseDto,
     description:
-      'The message to be signed by the client and passed to Auth API',
+      'EIP-4361 standard message to be signed by the client and passed to Auth API and a callback URL to submit signature and the signed message',
   })
-  @ApiOperation({ operationId: 'signInWithEthereum' })
-  async signInWithEthereum(
-    @Body() authWithEthereumRequest: AuthWithEthereumRequestDto,
-  ): Promise<AuthWithEthereumResponseDto> {
-    return await this.authService.signInWithEthereum(authWithEthereumRequest);
+  @ApiOperation({ operationId: 'signInWithEvm' })
+  signInWithEvm(
+    @Body() authWithEvmRequest: AuthWithEvmRequestDto,
+  ): Promise<AuthWithEvmRequestDto | AuthWithSolanaResponseDto> {
+    return this.authService.signInWithWeb3Auth(
+      authWithEvmRequest,
+      EBlockchainType.EVM,
+    );
   }
 
-  @Post('/signUpWithEthereum')
+  @Post('/signUp/evm')
   @ApiCreatedResponse({
-    type: AuthWithEthereumResponseDto,
+    type: AuthWithEvmResponseDto,
     description:
-      'The message to be signed by the client and passed to Auth API',
+      'EIP-4361 standard message to be signed by the client and passed to Auth API and a callback URL to submit signature and the signed message',
   })
-  @ApiOperation({ operationId: 'signUpWithEthereum' })
-  async signUpWithEthereum(
-    @Body() authWithEthereumRequest: AuthWithEthereumRequestDto,
-  ): Promise<AuthWithEthereumResponseDto> {
-    return await this.authService.signUpWithEthereum(authWithEthereumRequest);
+  @ApiOperation({ operationId: 'signUpWithEvm' })
+  signUpWithEvm(
+    @Body() authWithEvmRequest: AuthWithEvmRequestDto,
+  ): Promise<AuthWithEvmRequestDto | AuthWithSolanaResponseDto> {
+    return this.authService.signUpWithWeb3Auth(
+      authWithEvmRequest,
+      EBlockchainType.EVM,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post('/linkWithEthereum')
+  @Post('/link/evm')
   @ApiCreatedResponse({
-    type: AuthWithEthereumResponseDto,
+    type: AuthWithEvmResponseDto,
     description:
-      'The message to be signed by the client and passed to Auth API',
+      'EIP-4361 standard message to be signed by the client and passed to Auth API and a callback URL to submit signature and the signed message',
   })
-  @ApiOperation({ operationId: 'linkWithEthereum' })
-  async linkWithEthereum(
+  @ApiOperation({ operationId: 'linkWithEvm' })
+  linkWithEvm(
     @Req() req,
-    @Body() authWithEthereumRequest: AuthWithEthereumRequestDto,
-  ): Promise<AuthWithEthereumResponseDto> {
-    return await this.authService.linkWithEthereum(
-      authWithEthereumRequest,
+    @Body() authWithEvmRequest: AuthWithEvmRequestDto,
+  ): Promise<AuthWithEvmRequestDto | AuthWithSolanaResponseDto> {
+    return this.authService.linkWithWeb3Auth(
+      authWithEvmRequest,
+      EBlockchainType.EVM,
       req.user,
     );
   }
 
-  @Post('/completeWithEthereum')
+  @Post('/complete/evm')
   @ApiCreatedResponse({
-    type: CompleteWithEthereumResponseDto,
+    type: CompleteWithEvmResponseDto,
     description:
-      'The token to be used to call the third party API from the client',
+      'A JWT token to be used to call the third party API from the client',
   })
-  @ApiOperation({ operationId: 'completeWithEthereum' })
-  async completeWithEthereum(
-    @Body() completeWithEthereumRequest: CompleteWithEthereumRequestDto,
-  ): Promise<CompleteWithEthereumResponseDto> {
-    return await this.authService.completeWithEthereum(
-      completeWithEthereumRequest,
+  @ApiOperation({ operationId: 'completeWithEvm' })
+  completeWithEvm(
+    @Body() completeWithEvmRequest: EvmCompleteChallengeRequestDto,
+  ): Promise<CompleteWithEvmResponseDto> {
+    return this.authService.completeWithWeb3Auth(
+      completeWithEvmRequest,
+      EBlockchainType.EVM,
+    );
+  }
+
+  @Post('/signIn/solana')
+  @ApiCreatedResponse({
+    type: AuthWithSolanaResponseDto,
+    description:
+      'Base58 encoded message to be signed by the client and passed to Auth API and a callback URL to submit signature and the signed message',
+  })
+  @ApiOperation({ operationId: 'signInWithSolana' })
+  signInWithSolana(
+    @Body() authWithSolanaRequest: AuthWithSolanaRequestDto,
+  ): Promise<AuthWithEvmRequestDto | AuthWithSolanaResponseDto> {
+    return this.authService.signInWithWeb3Auth(
+      authWithSolanaRequest,
+      EBlockchainType.SOLANA,
+    );
+  }
+
+  @Post('/signUp/solana')
+  @ApiCreatedResponse({
+    type: AuthWithSolanaResponseDto,
+    description:
+      'Base58 encoded message to be signed by the client and passed to Auth API and a callback URL to submit signature and the signed message',
+  })
+  @ApiOperation({ operationId: 'signUpWithSolana' })
+  signUpWithSolana(
+    @Body() authWithSolanaRequest: AuthWithSolanaRequestDto,
+  ): Promise<AuthWithEvmRequestDto | AuthWithSolanaResponseDto> {
+    return this.authService.signUpWithWeb3Auth(
+      authWithSolanaRequest,
+      EBlockchainType.SOLANA,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('/link/solana')
+  @ApiCreatedResponse({
+    type: AuthWithSolanaResponseDto,
+    description:
+      'Base58 encoded message to be signed by the client and passed to Auth API and a callback URL to submit signature and the signed message',
+  })
+  @ApiOperation({ operationId: 'linkWithSolana' })
+  linkWithSolana(
+    @Req() req,
+    @Body() authWithSolanaRequest: AuthWithSolanaRequestDto,
+  ): Promise<AuthWithEvmRequestDto | AuthWithSolanaResponseDto> {
+    return this.authService.linkWithWeb3Auth(
+      authWithSolanaRequest,
+      EBlockchainType.SOLANA,
+      req.user,
+    );
+  }
+
+  @Post('/complete/solana')
+  @ApiCreatedResponse({
+    type: CompleteWithSolanaResponseDto,
+    description:
+      'A JWT token to be used to call the third party API from the client',
+  })
+  @ApiOperation({ operationId: 'completeWithSolana' })
+  completeWithSolana(
+    @Body() completeWithSolanaRequest: SolanaCompleteChallengeRequestDto,
+  ): Promise<CompleteWithSolanaResponseDto> {
+    return this.authService.completeWithWeb3Auth(
+      completeWithSolanaRequest,
+      EBlockchainType.SOLANA,
     );
   }
 }
