@@ -1,5 +1,9 @@
 import axios from 'axios';
-import { moralisWeb3ApiKey, moralisWeb3ApiUrl } from '../../config/env';
+import {
+  moralisWeb3ApiKey,
+  moralisEvmApiUrl,
+  moralisSolanaApiUrl,
+} from '../../config/env';
 import { Web3ApiRequestDto } from './dto/web3ApiRequest.dto';
 import { buildQuery } from '../../config/utils';
 
@@ -8,20 +12,19 @@ export class NftService {
     address: string,
     web3ApiRequestDto: Web3ApiRequestDto,
   ): Promise<any> {
-    const query = buildQuery(web3ApiRequestDto);
-    if (address) {
-      const { data } = await axios.get(
-        `${moralisWeb3ApiUrl}/${address}/nft?${query}`,
-        {
-          headers: {
-            'X-API-Key': moralisWeb3ApiKey,
-          },
-        },
-      );
+    if (!address) return [];
 
-      return data;
-    } else {
-      return [];
+    const query = buildQuery(web3ApiRequestDto);
+    let path = `${moralisSolanaApiUrl}/account/mainnet/${address}/nft`;
+    if (address.startsWith('0x')) {
+      path = `${moralisEvmApiUrl}/${address}/nft?${query}`;
     }
+    const { data } = await axios.get(path, {
+      headers: {
+        'X-API-Key': moralisWeb3ApiKey,
+      },
+    });
+
+    return data;
   }
 }

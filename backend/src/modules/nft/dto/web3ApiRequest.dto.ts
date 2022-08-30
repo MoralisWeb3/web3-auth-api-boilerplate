@@ -1,9 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNumberString, IsOptional, IsString } from 'class-validator';
+import { EBlockchain } from '../../../modules/auth/types/EBlockchain';
 
 export class Web3ApiRequestDto {
   @ApiProperty({
     type: String,
+    enum: EBlockchain,
     required: false,
     description: 'The current chain',
     example: 'eth',

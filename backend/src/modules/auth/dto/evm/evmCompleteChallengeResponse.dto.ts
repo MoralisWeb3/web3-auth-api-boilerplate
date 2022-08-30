@@ -1,24 +1,25 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEthereumAddress,
-  IsPositive,
   IsUrl,
   IsOptional,
-  Min,
   IsArray,
   IsNotEmpty,
   IsAscii,
   IsISO8601,
+  IsNumber,
+  IsEnum,
 } from 'class-validator';
+import { EChainId } from '../../types/EChainId';
 
-export class CompleteChallengeResponseDto {
+export class EvmCompleteChallengeResponseDto {
   @ApiProperty({
     type: String,
     required: true,
     maxLength: 64,
     minLength: 8,
     description:
-      'Secret Challenge ID used to identify this particular request. Is should be used at the backend of the calling service to identify the completed request.',
+      '17-characters Alphanumeric string Secret Challenge ID used to identify this particular request. Is should be used at the backend of the calling service to identify the completed request.',
     example: 'fRyt67D3eRss3RrX',
     pattern: '^[a-zA-Z0-9]{8,64}$',
   })
@@ -36,15 +37,15 @@ export class CompleteChallengeResponseDto {
 
   @ApiProperty({
     type: Number,
-    minimum: 0,
+    enum: EChainId,
     required: true,
-    example: 1,
+    example: EChainId.ETH,
     description:
       'EIP-155 Chain ID to which the session is bound, and the network where Contract Accounts must be resolved.',
   })
-  @IsPositive()
-  @Min(1)
-  chainId: number;
+  @IsNumber()
+  @IsEnum(EChainId)
+  chainId: EChainId;
 
   @ApiProperty({
     type: String,

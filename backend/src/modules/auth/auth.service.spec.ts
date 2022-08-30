@@ -3,12 +3,13 @@ import { Wallet } from 'ethers';
 import { apiPort, jwtSecret, moralisAuthApiUrl } from '../../config/env';
 import { verify, JwtPayload } from 'jsonwebtoken';
 import { UserService } from '../user/user.service';
-import { ChallengeResponseDto } from './dto/challengeResponse.dto';
 import { ProtectedUserDto } from '../user/dto/protectedUser.dto';
 import { UserDto } from '../user/dto/user.dto';
-import { CompleteChallengeResponseDto } from './dto/completeChallengeResponse.dto';
+import { EBlockchainType } from '../../config/types';
 import { Test, TestingModule } from '@nestjs/testing';
 import { appConfig } from '../../config/app';
+import { EvmChallengeResponseDto } from './dto/evm/evmChallengeResponse.dto';
+import { EvmCompleteChallengeResponseDto } from './dto/evm/evmCompleteChallengeResponse.dto';
 
 describe('auth service', () => {
   let module: TestingModule;
@@ -28,20 +29,16 @@ describe('auth service', () => {
     web2User = {
       profileId: '',
       username: 'aaa@moralis.io',
-      password: 'helloworld',
+      password: 'moralispassword',
       address: '',
     };
     userService.createUser(web2User);
   });
 
-  it('should be defined', () => {
-    expect(userService).toBeDefined();
-  });
-
   it('can sign up with local', () => {
     const newWeb2User = {
       username: 'bbb@moralis.io',
-      password: 'helloworld',
+      password: 'moralispassword',
     };
     const authLocalResponse = authService.signUp(newWeb2User);
 
@@ -58,7 +55,7 @@ describe('auth service', () => {
     try {
       authService.signUp({
         username: 'aaa@moralis.io',
-        password: 'helloworld',
+        password: 'moralispassword',
       });
     } catch (error: any) {
       message = error.message;
@@ -96,7 +93,7 @@ describe('auth service', () => {
     const user: UserDto = {
       profileId: '',
       username: 'email@moralis.io',
-      password: 'helloworld',
+      password: 'moralispassword',
       address: wallet.address,
     };
     userService.createUser(user);
@@ -112,16 +109,19 @@ describe('auth service', () => {
   });
 
   it('should return sign message data', () => {
-    const challengeResponse: ChallengeResponseDto = {
+    const challengeResponse: EvmChallengeResponseDto = {
       id: '123',
       profileId: '',
       message: 'this is a signing message',
     };
-    const signingData = authService.prepareSigningData(challengeResponse);
+    const signingData = authService.prepareSignData(
+      challengeResponse,
+      EBlockchainType.EVM,
+    );
 
     expect(signingData.message).toEqual(challengeResponse.message);
     expect(signingData.signUrl).toEqual(
-      `http://localhost:${apiPort}/auth/completeWithEthereum`,
+      `http://localhost:${apiPort}/auth/complete/evm`,
     );
   });
 
@@ -131,7 +131,7 @@ describe('auth service', () => {
       address: wallet.address,
       username: 'email@moralis.io',
     };
-    const completeChallengeResponse: CompleteChallengeResponseDto = {
+    const completeChallengeResponse: EvmCompleteChallengeResponseDto = {
       id: '',
       chainId: 0,
       version: '',

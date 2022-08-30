@@ -1,13 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class ChallengeResponseDto {
+export class SolanaChallengeResponseDto {
   @ApiProperty({
     type: String,
     required: true,
     maxLength: 64,
     minLength: 8,
     description:
-      'Secret Challenge ID used to identify this particular request. Is should be used at the backend of the calling service to identify the completed request.',
+      '17-characters Alphanumeric string Secret Challenge ID used to identify this particular request. Is should be used at the backend of the calling service to identify the completed request.',
     example: 'fRyt67D3eRss3RrX',
     pattern: '^[a-zA-Z0-9]{8,64}$',
   })
@@ -18,7 +18,7 @@ export class ChallengeResponseDto {
     required: true,
     description: 'Message that needs to be signed by the end user',
     example:
-      'defi.finance wants you to sign in with your Ethereum account:\n0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B\n\nPlease confirm\n\nURI: https://defi.finance/\nVersion: 1\nChain ID: 1\nNonce: DbU1DCTmdzR4lg3wi\nIssued At: 2022-06-12T12:15:31.290Z\nExpiration Time: 2020-01-01T00:00:00.000Z\nNot Before: 2020-01-01T00:00:00.000Z\nResources:\n- https://docs.moralis.io/',
+      'defi.finance wants you to sign in with your Solana account:\n26qv4GCcx98RihuK3c4T6ozB3J7L6VwCuFVc7Ta2A3Uo\n\nI am a third party API\n\nURI: http://defi.finance\nVersion: 1\nNetwork: mainnet\nNonce: PYxxb9msdjVXsMQ9x\nIssued At: 2022-08-25T11:02:34.097Z\nExpiration Time: 2022-08-25T11:12:38.243Z\nResources:\n- https://docs.moralis.io/',
   })
   message: string;
 

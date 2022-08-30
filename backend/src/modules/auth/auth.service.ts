@@ -1,11 +1,6 @@
 import axios from 'axios';
-import { ChallengeRequestDto } from './dto/challengeRequest.dto';
-import { CompleteWithEthereumRequestDto } from './dto/completeWithEthereumRequest.dto';
-import { CompleteWithEthereumResponseDto } from './dto/completeWithEthereumResponse.dto';
-import { AuthWithEthereumRequestDto } from './dto/authWithEthereumRequest.dto';
-import { AuthWithEthereumResponseDto } from './dto/authWithEthereumResponse.dto';
-import { AuthLocalResponseDto } from './dto/authLocalResponse.dto';
-import { AuthLocalRequestDto } from './dto/authLocalRequest.dto';
+import { AuthWithLocalResponseDto } from './dto/authWithLocalResponse.dto';
+import { AuthWithLocalRequestDto } from './dto/authWithLocalRequest.dto';
 import { apiPort, moralisAuthApiUrl, xApiKey } from '../../config/env';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import {
@@ -18,15 +13,21 @@ import {
 } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { UserDto } from '../user/dto/user.dto';
-import { ChallengeResponseDto } from './dto/challengeResponse.dto';
 import { Cache } from 'cache-manager';
 import { ProtectedUserDto } from '../user/dto/protectedUser.dto';
 import { ETIMEOUT } from '../../config/timeout';
-import { CompleteChallengeResponseDto } from './dto/completeChallengeResponse.dto';
-import { EHeaderKey } from '../../config/types';
+import { EHeaderKey, EBlockchainType } from '../../config/types';
+import { IAuthService } from './interfaces/IAuthService';
+import { ICompleteChallengeResponse } from './interfaces/ICompleteChallengeResponse';
+import { IChallengeResponse } from './interfaces/IChallengeResponse';
+import { ITokenResponse } from './interfaces/ITokenResponse';
+import { IChallengeRequest } from './interfaces/IChallengeRequest';
+import { ISignData } from './interfaces/ISignData';
+import { ICompleteChallengeRequest } from './interfaces/ICompleteChallengeRequest';
+import { IWeb3AuthRequest } from './interfaces/IWeb3AuthRequest';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements IAuthService {
   constructor(
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
@@ -35,7 +36,7 @@ export class AuthService {
     private readonly userService: UserService,
   ) {}
 
-  signUp(authLocalRequest: AuthLocalRequestDto): AuthLocalResponseDto {
+  signUp(authLocalRequest: AuthWithLocalRequestDto): AuthWithLocalResponseDto {
     const user = this.userService.createUser({
       profileId: '',
       username: authLocalRequest.username,
@@ -61,7 +62,7 @@ export class AuthService {
     return { token };
   }
 
-  signIn(authLocalRequest: AuthLocalRequestDto): AuthLocalResponseDto {
+  signIn(authLocalRequest: AuthWithLocalRequestDto): AuthWithLocalResponseDto {
     const user = this.userService.findUserByLocal(
       authLocalRequest.username,
       authLocalRequest.password,
@@ -87,18 +88,20 @@ export class AuthService {
     return { token };
   }
 
-  async signUpWithEthereum(
-    authWithEthereumRequest: AuthWithEthereumRequestDto,
-  ): Promise<AuthWithEthereumResponseDto> {
+  async signUpWithWeb3Auth(
+    authRequest: IWeb3AuthRequest,
+    blockchainType: EBlockchainType,
+  ): Promise<ISignData> {
     const addressOwner = this.userService.findUserByWeb3Auth(
-      authWithEthereumRequest.address,
+      authRequest.address,
     );
 
     if (addressOwner)
       throw new ForbiddenException('Address has been registered');
 
     const challengeResponse = await this.signWithMoralisAuth(
-      authWithEthereumRequest,
+      authRequest,
+      blockchainType,
     );
 
     await this.cacheManager.set<ProtectedUserDto>(
@@ -106,46 +109,48 @@ export class AuthService {
       {
         profileId: challengeResponse.profileId,
         username: '',
-        address: authWithEthereumRequest.address,
+        address: authRequest.address,
       },
       { ttl: ETIMEOUT.AUTHENTICATION_LIFECYCLE },
     );
 
-    return this.prepareSigningData(challengeResponse);
+    return this.prepareSignData(challengeResponse, blockchainType);
   }
 
-  async signInWithEthereum(
-    authWithEthereumRequest: AuthWithEthereumRequestDto,
-  ): Promise<AuthWithEthereumResponseDto> {
-    const user = this.userService.findUserByWeb3Auth(
-      authWithEthereumRequest.address,
-    );
+  async signInWithWeb3Auth(
+    authRequest: IWeb3AuthRequest,
+    blockchainType: EBlockchainType,
+  ): Promise<ISignData> {
+    const user = this.userService.findUserByWeb3Auth(authRequest.address);
     if (!user) throw new NotFoundException('Unable to authenticate user');
 
     const challengeResponse = await this.signWithMoralisAuth(
-      authWithEthereumRequest,
+      authRequest,
+      blockchainType,
     );
 
     await this.cacheManager.set<ProtectedUserDto>(challengeResponse.id, user, {
       ttl: ETIMEOUT.AUTHENTICATION_LIFECYCLE,
     });
 
-    return this.prepareSigningData(challengeResponse);
+    return this.prepareSignData(challengeResponse, blockchainType);
   }
 
-  async linkWithEthereum(
-    authWithEthereumRequest: AuthWithEthereumRequestDto,
+  async linkWithWeb3Auth(
+    authRequest: IWeb3AuthRequest,
+    blockchainType: EBlockchainType,
     user: UserDto,
-  ): Promise<AuthWithEthereumResponseDto> {
+  ): Promise<ISignData> {
     const addressOwner = this.userService.findUserByWeb3Auth(
-      authWithEthereumRequest.address,
+      authRequest.address,
     );
 
     if (addressOwner)
       throw new ForbiddenException('Address has been registered');
 
     const challengeResponse = await this.signWithMoralisAuth(
-      authWithEthereumRequest,
+      authRequest,
+      blockchainType,
     );
 
     await this.cacheManager.set<ProtectedUserDto>(
@@ -153,19 +158,21 @@ export class AuthService {
       {
         profileId: challengeResponse.profileId,
         username: user.username,
-        address: authWithEthereumRequest.address,
+        address: authRequest.address,
       },
       { ttl: ETIMEOUT.AUTHENTICATION_LIFECYCLE },
     );
 
-    return this.prepareSigningData(challengeResponse);
+    return this.prepareSignData(challengeResponse, blockchainType);
   }
 
-  async completeWithEthereum(
-    completeWithEthereumRequest: CompleteWithEthereumRequestDto,
-  ): Promise<CompleteWithEthereumResponseDto> {
+  async completeWithWeb3Auth(
+    completeChallengeRequest: ICompleteChallengeRequest,
+    blockchainType: EBlockchainType,
+  ): Promise<ITokenResponse> {
     const challengeResponse = await this.completeWithMoralisAuth(
-      completeWithEthereumRequest,
+      completeChallengeRequest,
+      blockchainType,
     );
 
     const protectedUser = await this.cacheManager.get<ProtectedUserDto>(
@@ -200,11 +207,12 @@ export class AuthService {
   }
 
   async completeWithMoralisAuth(
-    completeWithEthereumRequest: CompleteWithEthereumRequestDto,
-  ): Promise<CompleteChallengeResponseDto> {
-    const { data } = await axios.post<CompleteChallengeResponseDto>(
-      `${moralisAuthApiUrl}/challenge/verify/evm`,
-      completeWithEthereumRequest,
+    completeChallengeRequest: ICompleteChallengeRequest,
+    blockchainType: EBlockchainType,
+  ): Promise<ICompleteChallengeResponse> {
+    const { data } = await axios.post<ICompleteChallengeResponse>(
+      `${moralisAuthApiUrl}/challenge/verify/${blockchainType}`,
+      completeChallengeRequest,
       {
         headers: {
           [EHeaderKey.X_API_KEY]: xApiKey,
@@ -216,11 +224,13 @@ export class AuthService {
   }
 
   async signWithMoralisAuth(
-    authWithEthereumRequest: AuthWithEthereumRequestDto,
-  ): Promise<ChallengeResponseDto> {
-    const challengeRequest: ChallengeRequestDto = {
-      address: authWithEthereumRequest.address,
-      chainId: authWithEthereumRequest.chainId,
+    authRequest: IWeb3AuthRequest,
+    blockchainType: EBlockchainType,
+  ): Promise<IChallengeResponse> {
+    const challengeRequest: IChallengeRequest = {
+      address: authRequest.address,
+      network: authRequest.network,
+      chainId: authRequest.chainId,
       domain: 'localhost',
       timeout: ETIMEOUT.AUTHENTICATION_LIFECYCLE,
       uri: `${moralisAuthApiUrl}/auth`,
@@ -231,8 +241,8 @@ export class AuthService {
       resources: [`${moralisAuthApiUrl}/auth`],
     };
 
-    const { data } = await axios.post<ChallengeResponseDto>(
-      `${moralisAuthApiUrl}/challenge/request/evm`,
+    const { data } = await axios.post<IChallengeResponse>(
+      `${moralisAuthApiUrl}/challenge/request/${blockchainType}`,
       challengeRequest,
       {
         headers: {
@@ -244,32 +254,31 @@ export class AuthService {
     return data;
   }
 
-  prepareSigningData(challengeResponse: ChallengeResponseDto) {
-    const signInResponse: AuthWithEthereumResponseDto = {
+  prepareSignData(
+    challengeResponse: IChallengeResponse,
+    blockchainType: EBlockchainType,
+  ): ISignData {
+    const pathMappings = {
+      [EBlockchainType.EVM]: 'complete/evm',
+      [EBlockchainType.SOLANA]: 'complete/solana',
+    };
+    const path = pathMappings[blockchainType];
+    const signInResponse = {
       message: challengeResponse.message,
-      signUrl: `http://localhost:${apiPort}/auth/completeWithEthereum`,
+      signUrl: `http://localhost:${apiPort}/auth/${path}`,
     };
 
-    return signInResponse;
+    return signInResponse as any as ISignData;
   }
 
   createToken(
-    completeChallengeResponse: CompleteChallengeResponseDto,
+    completeChallengeResponse: ICompleteChallengeResponse,
     protectedUser: ProtectedUserDto,
-  ) {
-    const {
-      chainId,
-      version,
-      resources,
-      address,
-      nonce,
-      uri,
-      domain,
-      profileId,
-    } = completeChallengeResponse;
+  ): string {
+    const { version, resources, address, nonce, uri, domain, profileId } =
+      completeChallengeResponse;
 
     const jwtClaims = {
-      chainId: chainId,
       version: version,
       resources: resources,
       address: address,
